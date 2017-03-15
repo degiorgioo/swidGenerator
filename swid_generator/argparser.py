@@ -21,7 +21,9 @@ def regid_string(string):
     if string is None:
         return None
     try:
-        return re.match(r'^regid\.\d{4}-\d{2}\.[^ /|:<>*?&\\]*$', string).group(0)
+        #  return re.match(r'^regid\.\d{4}-\d{2}\.[^ /|:<>*?&\\]*$', string).group(0)
+        #  regex changed to pass URI
+        return re.match(r'(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', string).group(0)
     except:
         raise ArgumentTypeError("String '{0}' does not match required format".format(string))
 
@@ -76,6 +78,9 @@ class MainArgumentParser(object):
                                  help='Dump the full SWID tags including file tags for each package.')
         swid_parser.add_argument('--pretty', action='store_true', default=False,
                                  help='Indent the XML output.')
+
+        swid_parser.add_argument('--ugly', action='store_true', dest='uglify', default=False)
+
         swid_parser.set_defaults(matcher=all_matcher)
 
         targeted_group = swid_parser.add_argument_group(

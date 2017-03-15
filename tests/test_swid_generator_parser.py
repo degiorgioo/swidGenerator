@@ -20,7 +20,12 @@ def parser(env_registry):
 
 def test_full_argument(parser):
     result = parser.parse('swid --full'.split())
+    result2 = parser.parse('swid --pretty'.split())
+    result3 = parser.parse('swid --ugly'.split())
+
     assert result.full is True
+    assert result2.pretty is True
+    assert result3.ugly is True
 
 
 def test_invalid_regid_format():

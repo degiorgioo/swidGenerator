@@ -6,13 +6,16 @@ import os.path
 
 class FileInfo(object):
     def __init__(self, path):
-        self.location, self.name = os.path.split(path)
+        self.location = os.path.split(path)[0]
+        self.name = (os.path.split(path)[1]).split(' ')[0]
+        self.mutable = False
 
 
 class PackageInfo(object):
-    def __init__(self, package='', version='', files=None):
+    def __init__(self, package='', version='', files=None, conffiles=None):
         if files is None:
             files = []
         self.package = package
         self.version = version
         self.files = files
+        self.conffiles = conffiles

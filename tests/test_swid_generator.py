@@ -93,10 +93,10 @@ def test_non_pretty_output(swid_tag_generator, packages):
     for idx, document_string in enumerate(output):
         root = ET.fromstring(document_string)
 
-        #Test Entity tag
+        # Test Entity tag
         assert root[0].attrib['regid'] == DEFAULT_REGID
 
-        #Test SoftwareIdentity tag attributes
+        # Test SoftwareIdentity tag attributes
         assert root.attrib['version'] == packages[idx].version
         assert root.attrib['name'] == packages[idx].package
         assert root.attrib['uniqueId'] == '{os_info}-{architecture}-{pi.package}-{pi.version}'.format(

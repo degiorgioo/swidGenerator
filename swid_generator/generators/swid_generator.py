@@ -5,20 +5,67 @@ from xml.etree import cElementTree as ET
 
 from .utils import create_unique_id, create_software_id
 
+import os
 
-ROLE = 'tagcreator'
+from operator import itemgetter
+
+
+ROLE = 'tagCreator'
 VERSION_SCHEME = 'alphanumeric'
-XMLNS = 'http://standards.iso.org/iso/19770/-2/2014/schema.xsd'
+XMLNS = 'http://standards.iso.org/iso/19770/-2/2015/schema.xsd'
 XML_DECLARATION = '<?xml version="1.0" encoding="utf-8"?>'
+N8060 = 'http://csrc.nist.gov/schema/swid/2015-extensions/swid-2015-extensions-1.0.xsd'
+
+
+class Location:
+    def __init__(self, path):
+        self.path = path
+        self.subdirectories = set()
+
+    def addsubdirectory(self, directory):
+        self.subdirectories.add(directory)
 
 
 def _create_payload_tag(package_info):
     payload = ET.Element('Payload')
-    for file_info in package_info.files:
-        file_element = ET.SubElement(payload, 'File')
-        file_element.set('name', file_info.name)
-        file_element.set('location', file_info.location)
 
+    all_locations = set()
+    all_locations_head_and_tail = list()
+    directory_and_subdirs = list()
+
+    for file_info in package_info.files:
+        all_locations.add(file_info.location)
+        head, tail = os.path.split(file_info.location.strip())
+
+        all_locations_head_and_tail.append({
+            "head": head,
+            "tail": tail
+        })
+
+    all_locations_sorted = sorted(all_locations_head_and_tail, key=lambda dictionary: len(dictionary['head']))
+
+    for directory in all_locations_sorted:
+        directorytag = ET.SubElement(payload, 'Directory')
+        directorytag.set('root', directory['head'])
+        directorytag.set('name', directory['tail'])
+
+    """
+    for test in all_locations_with_subdirectories:
+        print(test.path)
+        print(test.subdirectories)
+
+    for location in all_locations:
+        directorytag = ET.SubElement(payload, 'Directory')
+        directorytag.set('root', location)
+
+        for file_in_package in package_info.files:
+            if file_in_package.location == location:
+                filetag = ET.SubElement(directorytag, 'File')
+                filetag.set('name', file_in_package.name)
+
+                if file_in_package.mutable:
+                    filetag.set('mutable', "true")
+    """
     return payload
 
 
@@ -78,21 +125,23 @@ def create_swid_tags(environment, entity_name, regid, full=False, matcher=all_ma
         if not matcher(ctx):
             continue
 
+        # Header SoftwareIdentity
         software_identity = ET.Element('SoftwareIdentity')
         software_identity.set('xmlns', XMLNS)
+        software_identity.set('n8060', N8060)
         software_identity.set('name', pi.package)
         software_identity.set('uniqueId', create_unique_id(pi, os_string, architecture))
-
         software_identity.set('version', pi.version)
         software_identity.set('versionScheme', VERSION_SCHEME)
 
+        # SubElement Entity
         entity = ET.SubElement(software_identity, 'Entity')
         entity.set('name', entity_name)
         entity.set('regid', regid)
         entity.set('role', ROLE)
 
         if full:
-            pi.files = environment.get_files_for_package(pi.package)
+            pi.files.extend(environment.get_files_for_package(pi.package))
             payload_tag = _create_payload_tag(pi)
             software_identity.append(payload_tag)
 
