@@ -17,7 +17,7 @@ XML_DECLARATION = '<?xml version="1.0" encoding="utf-8"?>'
 N8060 = 'http://csrc.nist.gov/schema/swid/2015-extensions/swid-2015-extensions-1.0.xsd'
 
 
-class Location:
+class Directory:
     def __init__(self, path):
         self.path = path
         self.subdirectories = set()
@@ -31,10 +31,10 @@ def _create_payload_tag(package_info):
 
     all_locations = set()
     all_locations_head_and_tail = list()
-    directory_and_subdirs = list()
 
     for file_info in package_info.files:
         all_locations.add(file_info.location)
+
         head, tail = os.path.split(file_info.location.strip())
 
         all_locations_head_and_tail.append({
@@ -44,10 +44,28 @@ def _create_payload_tag(package_info):
 
     all_locations_sorted = sorted(all_locations_head_and_tail, key=lambda dictionary: len(dictionary['head']))
 
+    directory_and_subdirs = []
+
+    for directory in all_locations_sorted:
+
+        head = directory['head']
+        tail = directory['tail']
+
+        dir = Directory(head)
+        dir.addsubdirectory(tail)
+
+        directory_and_subdirs.append(dir)
+
+    for dir in directory_and_subdirs:
+        print(dir.path)
+        print(dir.subdirectories)
+
+    """
     for directory in all_locations_sorted:
         directorytag = ET.SubElement(payload, 'Directory')
         directorytag.set('root', directory['head'])
         directorytag.set('name', directory['tail'])
+    """
 
     """
     for test in all_locations_with_subdirectories:
