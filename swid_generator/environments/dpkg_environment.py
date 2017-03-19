@@ -38,6 +38,7 @@ class DpkgEnvironment(CommonEnvironment):
         data = subprocess.check_output(command_args)
         result = []
 
+
         if isinstance(data, bytes):
             data = data.decode('utf-8')
         line_list = data.split('\t')
