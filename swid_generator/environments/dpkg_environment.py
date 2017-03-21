@@ -18,7 +18,6 @@ class DpkgEnvironment(CommonEnvironment):
 
     """
     executable = 'dpkg-query'
-    executable_ls = 'ls'
 
     installed_states = {
         'install ok installed': True,
@@ -38,7 +37,6 @@ class DpkgEnvironment(CommonEnvironment):
         data = subprocess.check_output(command_args)
         result = []
 
-
         if isinstance(data, bytes):
             data = data.decode('utf-8')
         line_list = data.split('\t')
@@ -47,26 +45,27 @@ class DpkgEnvironment(CommonEnvironment):
             split_line = line.split('\n')
 
             if len(split_line) >= 4:
-                info = PackageInfo()
-                info.package = split_line[0]
-                info.version = split_line[1]
-                info.status = split_line[2]
+                package_info = PackageInfo()
+                package_info.package = split_line[0]
+                package_info.version = split_line[1]
+                package_info.status = split_line[2]
 
+                # if Config-Files exists
                 if split_line[3] != '':
-                    fileinfos = []
-                    for filepath in split_line[3:len(split_line)]:
-                        file = FileInfo(filepath)
-                        file.mutable = True
-                        fileinfos.append(file)
+                    config_files = []
+                    for file_path in split_line[3:len(split_line)]:
+                        file_info = FileInfo(file_path)
+                        file_info.mutable = True
+                        config_files.append(file_info)
 
-                    info.files.extend(fileinfos)
+                    package_info.files.extend(config_files)
 
-                result.append(info)
+            result.append(package_info)
 
         return [r for r in result if cls._package_installed(r)]
 
     @classmethod
-    def get_files_for_package(cls, package_name):
+    def get_files_for_package(cls, package):
         """
         Get list of files related to the specified package.
 
@@ -78,13 +77,20 @@ class DpkgEnvironment(CommonEnvironment):
             List of ``FileInfo`` instances.
 
         """
-        command_args = [cls.executable, '-L', package_name]
+        command_args = [cls.executable, '-L', package.package]
         data = subprocess.check_output(command_args)
         if isinstance(data, bytes):
             data = data.decode('utf-8')
         lines = data.rstrip().split('\n')
         files = filter(cls._is_file, lines)
-        return [FileInfo(path) for path in files]
+
+        result = []
+
+        for path in files:
+            if not any(file_info.fullpathname.strip() == path for file_info in package.files):
+                result.append(FileInfo(path))
+
+        return result
 
     @classmethod
     def _package_installed(cls, package_info):

@@ -3,6 +3,7 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 
 import re
 
+import os
 
 uri_reserved_chars_re = re.compile(r'[:\/?#\[\]@!$&\'()*+,;=]')
 
@@ -46,3 +47,12 @@ def create_software_id(regid, unique_id):
 
     """
     return '{regid}_{unique_id}'.format(regid=regid, unique_id=unique_id)
+
+
+def construct_file_array(package_info):
+    constructed_array = []
+    for file_info in package_info.files:
+        splitted_filepath = file_info.fullpathname.split('/')
+        constructed_array.append(splitted_filepath[1: len(splitted_filepath)])
+    package_info.files = constructed_array
+    # return constructed_array

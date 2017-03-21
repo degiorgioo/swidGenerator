@@ -3,12 +3,10 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 
 from xml.etree import cElementTree as ET
 
-from .utils import create_unique_id, create_software_id
-
-import os
+from .utils import create_unique_id, create_software_id, construct_file_array
 
 from operator import itemgetter
-
+from itertools import groupby
 
 ROLE = 'tagCreator'
 VERSION_SCHEME = 'alphanumeric'
@@ -17,73 +15,40 @@ XML_DECLARATION = '<?xml version="1.0" encoding="utf-8"?>'
 N8060 = 'http://csrc.nist.gov/schema/swid/2015-extensions/swid-2015-extensions-1.0.xsd'
 
 
-class Directory:
-    def __init__(self, path):
-        self.path = path
-        self.subdirectories = set()
-
-    def addsubdirectory(self, directory):
-        self.subdirectories.add(directory)
-
-
 def _create_payload_tag(package_info):
     payload = ET.Element('Payload')
 
-    all_locations = set()
-    all_locations_head_and_tail = list()
+    def _file_hierarchy(filelist, payload_tag=None, last_tag=None):
+        filelist.sort(key=keyfunc)
 
-    for file_info in package_info.files:
-        all_locations.add(file_info.location)
+        for head, tail_of_file_iterator in groupby(filelist, keyfunc):
+            if payload_tag is not None:
+                current_tag = ET.SubElement(payload_tag, 'Directory')
+                current_tag.set('root', head)
+                last_tag = payload_tag
+            else:
+                current_tag = ET.SubElement(last_tag, 'Directory')
+                current_tag.set('name', head)
+            sub_files = list()
+            for file_info in tail_of_file_iterator:
 
-        head, tail = os.path.split(file_info.location.strip())
+                if len(file_info.fullpathname_splitted) == 2:
+                    file_tag = ET.SubElement(current_tag, 'File')
+                    file_tag.set('name', file_info.fullpathname_splitted[1])
+                    if file_info.mutable:
+                        file_tag.set('mutable', "True")
+                    del file_info
+                else:
+                    del file_info.fullpathname_splitted[0]
+                    sub_files.append(file_info)
+            if len(sub_files) > 0:
+                _file_hierarchy(sub_files, last_tag=current_tag)
 
-        all_locations_head_and_tail.append({
-            "head": head,
-            "tail": tail
-        })
+    def keyfunc(obj):
+        return obj.fullpathname_splitted[0]
 
-    all_locations_sorted = sorted(all_locations_head_and_tail, key=lambda dictionary: len(dictionary['head']))
+    _file_hierarchy(package_info.files, payload_tag=payload)
 
-    directory_and_subdirs = []
-
-    for directory in all_locations_sorted:
-
-        head = directory['head']
-        tail = directory['tail']
-
-        dir = Directory(head)
-        dir.addsubdirectory(tail)
-
-        directory_and_subdirs.append(dir)
-
-    for dir in directory_and_subdirs:
-        print(dir.path)
-        print(dir.subdirectories)
-
-    """
-    for directory in all_locations_sorted:
-        directorytag = ET.SubElement(payload, 'Directory')
-        directorytag.set('root', directory['head'])
-        directorytag.set('name', directory['tail'])
-    """
-
-    """
-    for test in all_locations_with_subdirectories:
-        print(test.path)
-        print(test.subdirectories)
-
-    for location in all_locations:
-        directorytag = ET.SubElement(payload, 'Directory')
-        directorytag.set('root', location)
-
-        for file_in_package in package_info.files:
-            if file_in_package.location == location:
-                filetag = ET.SubElement(directorytag, 'File')
-                filetag.set('name', file_in_package.name)
-
-                if file_in_package.mutable:
-                    filetag.set('mutable', "true")
-    """
     return payload
 
 
@@ -139,7 +104,8 @@ def create_swid_tags(environment, entity_name, regid, full=False, matcher=all_ma
             'package_info': pi
         }
 
-        # Check if the software-id of the current package matches the targeted request
+        # Check if
+        #  the software-id of the current package matches the targeted request
         if not matcher(ctx):
             continue
 
@@ -159,7 +125,7 @@ def create_swid_tags(environment, entity_name, regid, full=False, matcher=all_ma
         entity.set('role', ROLE)
 
         if full:
-            pi.files.extend(environment.get_files_for_package(pi.package))
+            pi.files.extend(environment.get_files_for_package(pi))
             payload_tag = _create_payload_tag(pi)
             software_identity.append(payload_tag)
 

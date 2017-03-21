@@ -8,7 +8,7 @@ from swid_generator.generators import swid_generator
 from swid_generator.package_info import PackageInfo
 from swid_generator.settings import DEFAULT_REGID, DEFAULT_ENTITY_NAME
 from swid_generator.environments.common import CommonEnvironment
-from swid_generator.generators.swid_generator import software_id_matcher, package_name_matcher
+from swid_generator.generators.swid_generator import software_id_matcher, package_name_matcher, _file_hierarchy
 
 
 class FileInfoMock(object):
@@ -144,3 +144,17 @@ def test_targeted_package_name_test(swid_tag_generator, package_name, expected):
     matcher = partial(package_name_matcher, value=package_name)
     output = list(swid_tag_generator(full=False, matcher=matcher))
     assert len(output) == expected
+
+
+def test_hirarchy():
+    y = [
+        ['bin', 'zbla', u'zsh2'],
+        ['bin', 'bla', u'zsh5'],
+        [u'usr', u'lib', u'x86_64-linux-gnu', u'zsh', u'5.1.1', u'zsh', u'deltochar.so'],
+        ['usr', u'lib', u'x86_64-linux-gnu', u'zsh', u'5.1.1', u'zsh', u'curses.so'],
+        ['usr', u'lib', u'x86_64-linux-gnu', u'zsh', u'5.1.1', u'zsh', u'clone.so'],
+        ['usr', u'lib', u'x86_64-linux-gnu', u'zsh', u'5.1.1', u'zsh', u'net', u'tcp.so'],
+        ['usr', u'lib', u'x86_64-linux-gnu', u'zsh', u'5.1.1', u'zsh', u'net', u'socket.so']
+    ]
+
+    _file_hierarchy(y)
