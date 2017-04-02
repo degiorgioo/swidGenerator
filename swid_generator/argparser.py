@@ -8,6 +8,8 @@ from argparse import ArgumentParser, ArgumentTypeError, Action
 from . import settings, meta
 from .generators.swid_generator import software_id_matcher, package_name_matcher, all_matcher
 
+from rfc3986 import is_valid_uri
+
 
 class TargetAction(Action):
     def __call__(self, parser, namespace, value, option_string=None):
@@ -20,12 +22,10 @@ class TargetAction(Action):
 def regid_string(string):
     if string is None:
         return None
-    try:
-        # TODO: Replace with new Regid Regex
-        return re.match(r'strongswan.org', string).group(0)
-    except:
+    if is_valid_uri(string):
+        return string
+    else:
         raise ArgumentTypeError("String '{0}' does not match required format".format(string))
-
 
 def hash_string(string):
     if string is None:
