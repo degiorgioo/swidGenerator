@@ -37,4 +37,5 @@ setup(name='swid_generator',
           'Programming Language :: Python :: 3.3',
           'Programming Language :: Python :: 3.4',
       ],
-)
+      install_requires=['rfc3986']
+      )

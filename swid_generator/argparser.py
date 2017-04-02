@@ -27,6 +27,7 @@ def regid_string(string):
     else:
         raise ArgumentTypeError("String '{0}' does not match required format".format(string))
 
+
 def hash_string(string):
     if string is None:
         return None
