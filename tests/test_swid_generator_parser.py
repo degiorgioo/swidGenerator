@@ -25,7 +25,7 @@ def test_full_argument(parser):
 
 def test_invalid_regid_format():
     with pytest.raises(ArgumentTypeError):
-        regid_string('09.strongswan.org*')
+        regid_string('[]09.strongswan.org*')
 
 
 def test_invalid_entity_name_format():
