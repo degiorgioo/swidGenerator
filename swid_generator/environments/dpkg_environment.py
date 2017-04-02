@@ -53,12 +53,11 @@ class DpkgEnvironment(CommonEnvironment):
                 if split_line[3] != '':
                     config_files = []
                     for file_path in split_line[3:len(split_line)]:
-                        file_path_without_md5 = (os.path.split(file_path)[1]).split(' ')[0]
+                        file_path_without_md5 = file_path.split(' ')[1]
                         if cls._is_file(file_path_without_md5):
                             file_info = FileInfo(file_path_without_md5)
                             file_info.mutable = True
                             config_files.append(file_info)
-
                     package_info.files.extend(config_files)
 
             result.append(package_info)
